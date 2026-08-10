@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Garden — Pinned Residents</title>
+<style>
+  :root {
+    --soil: #1a1612;
+    --bark: #2d2620;
+    --moss: #3d5a3a;
+    --leaf: #5a8c54;
+    --sun: #e8c94a;
+    --petal: #d4a574;
+    --mist: #c8c4b8;
+    --stone: #8a8477;
+    --sky: #e6e2d8;
+    --white: #f5f2eb;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
+    background: var(--soil);
+    color: var(--sky);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── screens ─────────────────────────────────── */
+  .screen { display: none; flex: 1; overflow-y: auto; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ── hero ─────────────────────────────────────── */
+  #hero {
+    align-items: center; justify-content: center;
+    text-align: center; padding: 2rem 1.5rem;
+    background:
+      radial-gradient(ellipse at 50% 120%, var(--moss) 0%, transparent 60%),
+      linear-gradient(180deg, #0d0b09 0%, var(--soil) 40%, #1e2418 100%);
+    position: relative;
+  }
+  #hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 15%, var(--sun) 0.5px, transparent 1px),
+      radial-gradient(1px 1px at 55% 8%, var(--petal) 0.5px, transparent 1px),
+      radial-gradient(1px 1px at 80% 22%, var(--sun) 0.5px, transparent 1px),
+      radial-gradient(1px 1px at 35% 30%, var(--mist) 0.3px, transparent 1px),
+      radial-gradient(1px 1px at 70% 35%, var(--sun) 0.4px, transparent 1px);
+    opacity: 0.4;
+  }
+
+  .hero-content { position: relative; z-index: 1; max-width: 480px; }
+  .hero-icon {
+    font-size: 3rem; margin-bottom: 1rem;
+    filter: drop-shadow(0 0 12px rgba(90, 140, 84, 0.5));
+  }
+  .hero-title {
+    font-size: 2.2rem; font-weight: 400; letter-spacing: 0.06em;
+    color: var(--sun); margin-bottom: 0.3rem;
+    text-transform: uppercase;
+  }
+  .hero-sub {
+    font-size: 0.85rem; color: var(--stone); letter-spacing: 0.12em;
+    text-transform: uppercase; margin-bottom: 2rem;
+  }
+  .hero-pitch {
+    font-size: 1.15rem; line-height: 1.7; color: var(--mist);
+    font-style: italic; margin-bottom: 2.5rem;
+  }
+
+  /* ── garden grid ──────────────────────────────── */
+  .garden {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 12px; padding: 0 1rem; width: 100%; max-width: 480px;
+    margin-bottom: 2rem;
+  }
+  .tree-slot {
+    aspect-ratio: 1;
+    background: var(--bark);
+    border: 1.5px solid var(--moss);
+    border-radius: 10px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 4px; padding: 8px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+  }
+  .tree-slot:hover { border-color: var(--leaf); background: #33291f; }
+  .tree-slot.pinned {
+    border-color: var(--sun);
+    background: linear-gradient(135deg, var(--bark) 60%, #3a3020);
+    box-shadow: 0 0 16px rgba(232, 201, 74, 0.15);
+  }
+  .tree-slot .tree-glyph { font-size: 1.7rem; line-height: 1; }
+  .tree-slot .tree-name {
+    font-size: 0.7rem; color: var(--mist);
+    text-align: center; line-height: 1.2;
+    overflow: hidden; text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  .tree-slot .pin-badge {
+    position: absolute; top: 5px; right: 5px;
+    font-size: 0.65rem; opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .tree-slot.pinned .pin-badge { opacity: 1; }
+
+  /* ── pin action ───────────────────────────────── */
+  .pin-bar {
+    background: var(--bark);
+    border: 1px solid var(--moss);
+    border-radius: 8px;
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px;
+    max-width: 480px; width: calc(100% - 2rem);
+    min-height: 52px;
+  }
+  .pin-bar .pin-label {
+    flex: 1; font-size: 0.85rem; color: var(--stone);
+  }
+  .pin-bar .pin-label strong { color: var(--sun); }
+  .pin-bar button {
+    background: var(--moss); color: var(--white);
+    border: none; border-radius: 6px;
+    padding: 8px 16px; font-family: inherit;
+    font-size: 0.8rem; cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: background 0.2s;
+  }
+  .pin-bar button:hover { background: var(--leaf); }
+
+  /* ── flow map ─────────────────────────────────── */
+  #flow {
+    align-items: center; padding: 2.5rem 1.5rem;
+    background: var(--soil);
+  }
+  .flow-title {
+    font-size: 1.4rem; color: var(--sun); letter-spacing: 0.06em;
+    margin-bottom: 0.4rem;
+  }
+  .flow-sub { font-size: 0.8rem; color: var(--stone); margin-bottom: 2rem; }
+  .flow-grid {
+    display: flex; flex-direction: column; gap: 14px;
+    width: 100%; max-width: 400px;
+  }
+  .flow-row { display: flex; gap: 14px; }
+  .flow-box {
+    flex: 1;
+    background: var(--bark);
+    border: 1px solid var(--moss);
+    border-radius: 8px;
+    padding: 18px 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    color: var(--mist);
+  }
+  .flow-box:hover { border-color: var(--sun); color: var(--sun); }
+  .flow-box .flow-label {
+    font-size: 0.85rem; font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .flow-box .flow-desc {
+    font-size: 0.65rem; color: var(--stone);
+    margin-top: 4px;
+  }
+  .flow-box.current { border-color: var(--sun); }
+  .flow-box.current .flow-label { color: var(--sun); }
+
+  /* ── placeholder screens ──────────────────────── */
+  .placeholder-screen {
+    align-items: center; justify-content: center;
+    text-align: center; padding: 3rem 1.5rem;
+    background:
+      radial-gradient(ellipse at 50% 80%, var(--bark) 0%, var(--soil) 70%);
+  }
+  .placeholder-screen .ph-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.6; }
+  .placeholder-screen h2 {
+    font-size: 1.3rem; font-weight: 400; color: var(--petal);
+    letter-spacing: 0.05em; margin-bottom: 0.5rem;
+  }
+  .placeholder-screen p {
+    font-size: 0.85rem; color: var(--stone);
+    font-style: italic; max-width: 320px;
+  }
+
+  /* ── bottom nav ───────────────────────────────── */
+  .bottom-nav {
+    display: flex;
+    background: var(--bark);
+    border-top: 1px solid #3a332b;
+    flex-shrink: 0;
+  }
+  .bottom-nav button {
+    flex: 1; background: none; border: none;
+    color: var(--stone); font-family: inherit;
+    font-size: 0.65rem; letter-spacing: 0.06em;
+    padding: 10px 4px 8px;
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 2px;
+    transition: color 0.2s;
+  }
+  .bottom-nav button .nav-icon { font-size: 1.1rem; }
+  .bottom-nav button.active { color: var(--sun); }
+  .bottom-nav button:hover { color: var(--leaf); }
+</style>
+</head>
+<body>
+
+<!-- ═══ HERO ═══ -->
+<div id="hero" class="screen active">
+  <div class="hero-content">
+    <div class="hero-icon">🌳</div>
+    <h1 class="hero-title">The Garden</h1>
+    <div class="hero-sub">The Convent &middot; Pinned Residents</div>
+    <p class="hero-pitch">
+      Every resident gets a tree in the meadow &mdash; pin yours to mark who&rsquo;s home.
+    </p>
+
+    <div class="garden" id="gardenGrid"></div>
+
+    <div class="pin-bar" id="pinBar">
+      <span class="pin-label">Tap a tree to pin a resident</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ FLOW MAP ═══ -->
+<div id="flow" class="screen">
+  <h2 class="flow-title">Flow Map</h2>
+  <p class="flow-sub">screens of the garden</p>
+  <div class="flow-grid">
+    <div class="flow-row">
+      <a class="flow-box current" href="#/">
+        <div class="flow-label">The Meadow</div>
+        <div class="flow-desc">pin &amp; browse residents</div>
+      </a>
+      <a class="flow-box" href="#/s/2">
+        <div class="flow-label">Seasons</div>
+        <div class="flow-desc">residency timeline</div>
+      </a>
+    </div>
+    <div class="flow-row">
+      <a class="flow-box" href="#/s/3">
+        <div class="flow-label">Soil &amp; Roots</div>
+        <div class="flow-desc">room-to-tree mapping</div>
+      </a>
+      <a class="flow-box" href="#/s/4">
+        <div class="flow-label">The Canopy</div>
+        <div class="flow-desc">community pulse</div>
+      </a>
+    </div>
+    <div class="flow-row">
+      <a class="flow-box" href="#/flow">
+        <div class="flow-label">Flow Map</div>
+        <div class="flow-desc">you are here</div>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PLACEHOLDER SCREENS ═══ -->
+<div id="s2" class="screen placeholder-screen">
+  <div class="ph-icon">🍂</div>
+  <h2>Seasons</h2>
+  <p>A Gantt-style timeline showing each resident's stay as a growing season &mdash; arrivals bloom, departures shed their leaves.</p>
+</div>
+
+<div id="s3" class="screen placeholder-screen">
+  <div class="ph-icon">🪴</div>
+  <h2>Soil &amp; Roots</h2>
+  <p>Map each tree to a physical room in buildings.json &mdash; the root system that ties the garden to the building geometry.</p>
+</div>
+
+<div id="s4" class="screen placeholder-screen">
+  <div class="ph-icon">🌿</div>
+  <h2>The Canopy</h2>
+  <p>A living dashboard: who's pinned in the garden right now, chore streaks as ring growth, hearts as fruit on the branch.</p>
+</div>
+
+<!-- ═══ BOTTOM NAV ═══ -->
+<nav class="bottom-nav" id="bottomNav">
+  <button data-screen="/">
+    <span class="nav-icon">🌳</span> Meadow
+  </button>
+  <button data-screen="/flow">
+    <span class="nav-icon">◇</span> Flow
+  </button>
+  <button data-screen="/s/2">
+    <span class="nav-icon">🍂</span> Seasons
+  </button>
+  <button data-screen="/s/3">
+    <span class="nav-icon">🪴</span> Roots
+  </button>
+  <button data-screen="/s/4">
+    <span class="nav-icon">🌿</span> Canopy
+  </button>
+</nav>
+
+<script>
+// ── mock resident data (mirrors buildings.json cells + convent rooms) ──
+const RESIDENTS = [
+  { name: 'Cell II',       tree: '🌲', room: '2-cell2' },
+  { name: 'Cell IV',       tree: '🌳', room: '2-cell4' },
+  { name: 'Cell V',        tree: '🍁', room: '2-cell5' },
+  { name: 'Cell VI',       tree: '🌴', room: '2-cell6' },
+  { name: 'Cell VII',      tree: '🎋', room: '2-cell7' },
+  { name: 'Cell VIII',     tree: '🎄', room: '2-cell8' },
+  { name: 'Scriptorium',   tree: '🌿', room: '2-scriptorium' },
+  { name: 'The Salon',     tree: '🪻', room: '1-classroom' },
+  { name: 'The Laboratory',tree: '🌵', room: 'll-lab' },
+];
+
+// pinned state (in the real system: persisted in room_occupancy or a pinned column)
+const pinned = new Set([0, 3, 6]); // some pre-pinned for the demo
+
+function renderGarden() {
+  const grid = document.getElementById('gardenGrid');
+  grid.innerHTML = '';
+  RESIDENTS.forEach((r, i) => {
+    const el = document.createElement('div');
+    el.className = 'tree-slot' + (pinned.has(i) ? ' pinned' : '');
+    el.innerHTML =
+      '<span class="pin-badge">📌</span>' +
+      '<span class="tree-glyph">' + r.tree + '</span>' +
+      '<span class="tree-name">' + esc(r.name) + '</span>';
+    el.onclick = () => togglePin(i);
+    grid.appendChild(el);
+  });
+  updatePinBar();
+}
+
+function togglePin(i) {
+  if (pinned.has(i)) pinned.delete(i);
+  else pinned.add(i);
+  renderGarden();
+}
+
+function updatePinBar() {
+  const bar = document.getElementById('pinBar');
+  const n = pinned.size;
+  if (n === 0) {
+    bar.innerHTML = '<span class="pin-label">Tap a tree to pin a resident</span>';
+  } else {
+    const names = [...pinned].map(i => RESIDENTS[i].name).join(', ');
+    bar.innerHTML =
+      '<span class="pin-label"><strong>' + n + ' pinned</strong> — ' + esc(names) + '</span>' +
+      '<button onclick="pinned.clear(); renderGarden();">Clear</button>';
+  }
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ── hash router ────────────────────────────────────────────────────────
+const ROUTES = {
+  '/':     'hero',
+  '/flow': 'flow',
+  '/s/2':  's2',
+  '/s/3':  's3',
+  '/s/4':  's4',
+};
+
+function route() {
+  const hash = location.hash.slice(1) || '/';
+  const screenId = ROUTES[hash] || 'hero';
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById(screenId);
+  if (target) target.classList.add('active');
+  // update nav
+  document.querySelectorAll('#bottomNav button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.screen === hash || (hash === '' && btn.dataset.screen === '/'));
+  });
+}
+
+// nav clicks
+document.querySelectorAll('#bottomNav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    location.hash = '#' + btn.dataset.screen;
+  });
+});
+
+window.addEventListener('hashchange', route);
+route();
+renderGarden();
+</script>
+</body>
+</html>
